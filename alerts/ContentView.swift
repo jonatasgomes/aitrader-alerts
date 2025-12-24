@@ -8,17 +8,20 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+        AlertListView()
+            .preferredColorScheme(nil) // Respects system setting
     }
 }
 
-#Preview {
+#Preview("Dark Mode") {
     ContentView()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Light Mode") {
+    ContentView()
+        .preferredColorScheme(.light)
 }

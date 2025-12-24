@@ -1,0 +1,66 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a3e"/>
+      <stop offset="50%" style="stop-color:#0f0f2d"/>
+      <stop offset="100%" style="stop-color:#0a0a1f"/>
+    </linearGradient>
+    <linearGradient id="bellGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ffcc"/>
+      <stop offset="100%" style="stop-color:#00aaff"/>
+    </linearGradient>
+    <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ffcc;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#00aaff;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bgGradient)"/>
+  
+  <!-- Ambient glow circles -->
+  <circle cx="280" cy="280" r="200" fill="url(#glowGradient)" opacity="0.5"/>
+  <circle cx="744" cy="744" r="180" fill="#4444ff" opacity="0.08"/>
+  
+  <!-- Stock chart line -->
+  <path d="M180 620 L320 580 L420 640 L520 480 L620 520 L720 380 L844 420" 
+        stroke="#00ddaa" stroke-width="8" fill="none" opacity="0.4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Bell icon -->
+  <g filter="url(#glow)" transform="translate(512, 480)">
+    <!-- Bell body -->
+    <path d="M0 -200 
+             C-120 -200 -180 -100 -180 40
+             L-180 80
+             C-180 100 -200 120 -220 120
+             L220 120
+             C200 120 180 100 180 80
+             L180 40
+             C180 -100 120 -200 0 -200
+             Z" 
+          fill="url(#bellGradient)"/>
+    
+    <!-- Bell clapper/ringer at bottom -->
+    <ellipse cx="0" cy="160" rx="60" ry="40" fill="url(#bellGradient)"/>
+    
+    <!-- Bell top handle -->
+    <circle cx="0" cy="-200" r="30" fill="url(#bellGradient)"/>
+  </g>
+  
+  <!-- Notification dot -->
+  <circle cx="680" cy="300" r="60" fill="#ff4466"/>
+  <circle cx="680" cy="300" r="40" fill="#ff6688"/>
+  
+  <!-- Sparkle effects -->
+  <circle cx="750" cy="240" r="8" fill="#ffffff" opacity="0.8"/>
+  <circle cx="280" cy="700" r="6" fill="#00ffcc" opacity="0.6"/>
+  <circle cx="800" cy="600" r="5" fill="#00aaff" opacity="0.5"/>
+</svg>
