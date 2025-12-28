@@ -10,164 +10,117 @@ import SwiftUI
 struct AlertCardView: View {
     let alert: TradingAlert
     let onTap: () -> Void
-    let onSwipeDelete: () -> Void
     
     @Environment(\.colorScheme) var colorScheme
-    @State private var offset: CGFloat = 0
-    @State private var isSwiping = false
     
     var body: some View {
-        ZStack(alignment: .trailing) {
-            // Delete background
-            HStack {
-                Spacer()
-                VStack {
-                    Image(systemName: "trash.fill")
-                        .font(.title2)
-                        .foregroundColor(.white)
-                    Text("Delete")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                }
-                .frame(width: 80)
-                .frame(maxHeight: .infinity)
-                .background(Color.red.opacity(0.8))
-            }
-            .cornerRadius(20)
-            
-            // Main card content
-            HStack(spacing: 12) {
-                // Type indicator
-                VStack {
-                    ZStack {
-                        Circle()
-                            .fill(alert.type.color.opacity(0.2))
-                            .frame(width: 50, height: 50)
-                        
-                        Text(alert.type.emoji)
-                            .font(.title2)
-                    }
+        // Main card content
+        HStack(spacing: 12) {
+            // Type indicator
+            VStack {
+                ZStack {
+                    Circle()
+                        .fill(alert.type.color.opacity(0.2))
+                        .frame(width: 50, height: 50)
                     
-                    // Priority badge
-                    Text(alert.priority.rawValue)
-                        .font(.system(size: 9, weight: .bold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(alert.priority.color.opacity(0.2))
-                        .foregroundColor(alert.priority.color)
-                        .cornerRadius(4)
+                    Text(alert.type.emoji)
+                        .font(.title2)
                 }
                 
-                // Content
-                VStack(alignment: .leading, spacing: 6) {
-                    // Header row
-                    HStack {
-                        Text(alert.symbol)
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(colorScheme == .dark ? .white : .primary)
-                        
-                        if let optionSymbol = alert.optionSymbol {
-                            Text(formatOptionSymbol(optionSymbol))
-                                .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.accentInfo.opacity(0.15))
-                                .foregroundColor(.accentInfo)
-                                .cornerRadius(4)
-                        }
-                        
-                        Spacer()
-                        
-                        if let change = alert.percentChange {
-                            PercentChangeBadge(value: change)
-                        }
-                    }
-                    
-                    // Message
-                    Text(alert.message)
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(colorScheme == .dark ? .white.opacity(0.8) : .secondary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                    
-                    // Footer
-                    HStack {
-                        // Source badge
-                        HStack(spacing: 4) {
-                            Image(systemName: alert.source.icon)
-                                .font(.system(size: 10))
-                            Text(alert.source.displayName)
-                                .font(.system(size: 10, weight: .medium))
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
-                        .foregroundColor(colorScheme == .dark ? .white.opacity(0.7) : .secondary)
-                        .cornerRadius(6)
-                        
-                        Spacer()
-                        
-                        // Timestamp
-                        Text(alert.timeAgo)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(colorScheme == .dark ? .white.opacity(0.5) : .secondary)
-                        
-                        // Unread indicator
-                        if !alert.isRead {
-                            Circle()
-                                .fill(Color.accentBuy)
-                                .frame(width: 8, height: 8)
-                        }
-                    }
-                }
+                // Priority badge
+                Text(alert.priority.rawValue)
+                    .font(.system(size: 9, weight: .bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(alert.priority.color.opacity(0.2))
+                    .foregroundColor(alert.priority.color)
+                    .cornerRadius(4)
             }
-            .glassCard(cornerRadius: 20, padding: 16)
-            .overlay(
-                // Left accent border
+            
+            // Content
+            VStack(alignment: .leading, spacing: 6) {
+                // Header row
                 HStack {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(alert.type.gradient)
-                        .frame(width: 4)
-                        .padding(.vertical, 12)
+                    Text(alert.symbol)
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(colorScheme == .dark ? .white : .primary)
+                    
+                    if let optionSymbol = alert.optionSymbol {
+                        Text(formatOptionSymbol(optionSymbol))
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.accentInfo.opacity(0.15))
+                            .foregroundColor(.accentInfo)
+                            .cornerRadius(4)
+                    }
+                    
                     Spacer()
+                    
+                    if let change = alert.percentChange {
+                        PercentChangeBadge(value: change)
+                    }
                 }
-                .padding(.leading, 4)
-            )
-            .offset(x: offset)
-            .gesture(
-                DragGesture()
-                    .onChanged { gesture in
-                        if gesture.translation.width < 0 {
-                            offset = gesture.translation.width
-                            isSwiping = true
-                        }
+                
+                // Message
+                Text(alert.message)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundColor(colorScheme == .dark ? .white.opacity(0.8) : .secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                // Footer
+                HStack {
+                    // Source badge
+                    HStack(spacing: 4) {
+                        Image(systemName: alert.source.icon)
+                            .font(.system(size: 10))
+                        Text(alert.source.displayName)
+                            .font(.system(size: 10, weight: .medium))
                     }
-                    .onEnded { gesture in
-                        withAnimation(.spring()) {
-                            if gesture.translation.width < -100 {
-                                offset = -1000
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    onSwipeDelete()
-                                }
-                            } else {
-                                offset = 0
-                            }
-                            isSwiping = false
-                        }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                    .foregroundColor(colorScheme == .dark ? .white.opacity(0.7) : .secondary)
+                    .cornerRadius(6)
+                    
+                    Spacer()
+                    
+                    // Timestamp
+                    Text(alert.timeAgo)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(colorScheme == .dark ? .white.opacity(0.5) : .secondary)
+                    
+                    // Unread indicator
+                    if !alert.isRead {
+                        Circle()
+                            .fill(Color.accentBuy)
+                            .frame(width: 8, height: 8)
                     }
-            )
-        }
-        .onTapGesture {
-            if !isSwiping {
-                onTap()
+                }
             }
+        }
+        .glassCard(cornerRadius: 20, padding: 16)
+        .overlay(
+            // Left accent border
+            HStack {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(alert.type.gradient)
+                    .frame(width: 4)
+                    .padding(.vertical, 12)
+                Spacer()
+            }
+            .padding(.leading, 4)
+        )
+        .onTapGesture {
+            onTap()
         }
     }
     
     // Format OCC option symbol to readable format
     private func formatOptionSymbol(_ symbol: String) -> String {
-        // OCC format: SYMBOL + 6 digits date + C/P + 8 digits strike
-        // Example: IWM250117C00250000 -> 250C 01/17
+        // OCC format: SYMBOL + YYMMDD + C/P + 8 digits strike
+        // Example: SOFI270115C00030000 -> 30C Jan 15, 2027
         guard symbol.count >= 15 else { return symbol }
         
         let dateStart = symbol.index(symbol.endIndex, offsetBy: -15)
@@ -182,9 +135,23 @@ struct AlertCardView: View {
         
         if let strikeValue = Double(strikeStr) {
             let strike = Int(strikeValue / 1000)
-            let month = String(dateStr.prefix(2).suffix(2))
-            let day = String(dateStr.suffix(2))
-            return "\(strike)\(optionType) \(month)/\(day)"
+            
+            // Parse YYMMDD format
+            let yearStr = String(dateStr.prefix(2))
+            let monthStr = String(dateStr.dropFirst(2).prefix(2))
+            let dayStr = String(dateStr.suffix(2))
+            
+            // Convert to full year (20XX)
+            let year = 2000 + (Int(yearStr) ?? 0)
+            let month = Int(monthStr) ?? 1
+            let day = Int(dayStr) ?? 1
+            
+            // Get month abbreviation
+            let monthNames = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            let monthName = month >= 1 && month <= 12 ? monthNames[month] : "???"
+            
+            return "\(strike)\(optionType) \(monthName) \(day), \(year)"
         }
         
         return symbol
@@ -216,6 +183,7 @@ struct PercentChangeBadge: View {
         VStack {
             AlertCardView(
                 alert: TradingAlert(
+                    id: 1,
                     symbol: "IWM",
                     message: "IWM call option 250C 01/17 is down 20% - Good entry point for LEAP position",
                     type: .buy,
@@ -224,8 +192,7 @@ struct PercentChangeBadge: View {
                     optionSymbol: "IWM250117C00250000",
                     percentChange: -20.0
                 ),
-                onTap: {},
-                onSwipeDelete: {}
+                onTap: {}
             )
             .padding()
         }

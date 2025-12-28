@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AlertListView: View {
-    @StateObject private var alertService = MockAlertService()
+    @StateObject private var alertService = OracleAlertService()
     @StateObject private var notificationManager = NotificationManager.shared
     
     @State private var selectedAlert: TradingAlert?
@@ -51,8 +51,15 @@ struct AlertListView: View {
                 // Filters
                 filterBar
                 
+                // Error banner
+                if let error = alertService.errorMessage {
+                    errorBanner(message: error)
+                }
+                
                 // Alert list
-                if filteredAlerts.isEmpty {
+                if alertService.isLoading && alertService.alerts.isEmpty {
+                    loadingView
+                } else if filteredAlerts.isEmpty {
                     emptyStateView
                 } else {
                     alertListContent
@@ -63,15 +70,27 @@ struct AlertListView: View {
             AlertDetailView(
                 alert: alert,
                 onDismiss: { selectedAlert = nil },
-                onMarkRead: {
-                    alertService.markAsRead(alert)
-                },
                 onDelete: {
-                    alertService.deleteAlert(alert)
+                    Task {
+                        await alertService.deleteAlert(alert)
+                    }
+                },
+                onMarkUnread: {
+                    Task {
+                        await alertService.markAsUnread(alert)
+                    }
                 }
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+            .onAppear {
+                // Mark as read when viewing details
+                if !alert.isRead {
+                    Task {
+                        await alertService.markAsRead(alert)
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -104,6 +123,25 @@ struct AlertListView: View {
                 
                 Spacer()
                 
+                // Refresh button
+                Button(action: {
+                    Task {
+                        await alertService.fetchAlerts()
+                    }
+                }) {
+                    Image(systemName: alertService.isLoading ? "arrow.triangle.2.circlepath" : "arrow.clockwise")
+                        .font(.system(size: 18))
+                        .foregroundColor(colorScheme == .dark ? .white.opacity(0.7) : .secondary)
+                        .padding(12)
+                        .background(
+                            Circle()
+                                .fill(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                        )
+                        .rotationEffect(.degrees(alertService.isLoading ? 360 : 0))
+                        .animation(alertService.isLoading ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: alertService.isLoading)
+                }
+                .disabled(alertService.isLoading)
+                
                 // Settings button
                 Button(action: { showSettings = true }) {
                     Image(systemName: "gearshape.fill")
@@ -114,20 +152,6 @@ struct AlertListView: View {
                             Circle()
                                 .fill(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
                         )
-                }
-                
-                // Mark all read button
-                if alertService.unreadCount > 0 {
-                    Button(action: { alertService.markAllAsRead() }) {
-                        Image(systemName: "envelope.open.fill")
-                            .font(.system(size: 18))
-                            .foregroundColor(.accentBuy)
-                            .padding(12)
-                            .background(
-                                Circle()
-                                    .fill(Color.accentBuy.opacity(0.15))
-                            )
-                    }
                 }
             }
             
@@ -198,6 +222,54 @@ struct AlertListView: View {
         .padding(.bottom, 12)
     }
     
+    // MARK: - Error Banner
+    private func errorBanner(message: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.accentWarning)
+            
+            Text(message)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white)
+                .lineLimit(2)
+            
+            Spacer()
+            
+            Button(action: {
+                Task {
+                    await alertService.fetchAlerts()
+                }
+            }) {
+                Text("Retry")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.accentBuy)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.accentWarning.opacity(0.2))
+        .cornerRadius(12)
+        .padding(.horizontal)
+        .padding(.bottom, 8)
+    }
+    
+    // MARK: - Loading View
+    private var loadingView: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            
+            ProgressView()
+                .scaleEffect(1.5)
+                .tint(.accentInfo)
+            
+            Text("Loading alerts...")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(colorScheme == .dark ? .white.opacity(0.7) : .secondary)
+            
+            Spacer()
+        }
+    }
+    
     // MARK: - Alert List
     private var alertListContent: some View {
         ScrollView {
@@ -207,14 +279,6 @@ struct AlertListView: View {
                         alert: alert,
                         onTap: {
                             selectedAlert = alert
-                            if !alert.isRead {
-                                alertService.markAsRead(alert)
-                            }
-                        },
-                        onSwipeDelete: {
-                            withAnimation {
-                                alertService.deleteAlert(alert)
-                            }
                         }
                     )
                     .transition(.asymmetric(
@@ -227,8 +291,7 @@ struct AlertListView: View {
             .padding(.bottom, 100)
         }
         .refreshable {
-            // Simulate refresh - in real app would fetch from Oracle
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            await alertService.fetchAlerts()
         }
     }
     

@@ -10,8 +10,8 @@ import SwiftUI
 struct AlertDetailView: View {
     let alert: TradingAlert
     let onDismiss: () -> Void
-    let onMarkRead: () -> Void
     let onDelete: () -> Void
+    let onMarkUnread: () -> Void
     
     @Environment(\.colorScheme) var colorScheme
     @State private var showDeleteConfirm = false
@@ -53,7 +53,7 @@ struct AlertDetailView: View {
                 onDismiss()
             }
         } message: {
-            Text("Are you sure you want to delete this alert?")
+            Text("Are you sure you want to delete this alert? This action cannot be undone.")
         }
     }
     
@@ -150,7 +150,7 @@ struct AlertDetailView: View {
                     DetailCell(
                         icon: "doc.text.fill",
                         label: "Option",
-                        value: optionSymbol,
+                        value: formatOptionSymbol(optionSymbol),
                         color: .accentInfo
                     )
                 }
@@ -208,9 +208,9 @@ struct AlertDetailView: View {
                 .background(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1))
             
             MetadataRow(
-                icon: alert.isRead ? "envelope.open.fill" : "envelope.badge.fill",
-                label: "Status",
-                value: alert.isRead ? "Read" : "Unread"
+                icon: "number",
+                label: "Alert ID",
+                value: "#\(alert.id)"
             )
         }
         .glassCard()
@@ -219,27 +219,21 @@ struct AlertDetailView: View {
     // MARK: - Actions
     private var actionsView: some View {
         VStack(spacing: 12) {
-            if !alert.isRead {
-                Button(action: {
-                    onMarkRead()
-                }) {
-                    HStack {
-                        Image(systemName: "envelope.open.fill")
-                        Text("Mark as Read")
-                    }
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(
-                        LinearGradient(
-                            colors: [.accentBuy, .accentBuy.opacity(0.8)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(12)
+            // Mark as Unread button - always visible since alert is marked read on open
+            Button(action: {
+                onMarkUnread()
+                onDismiss()
+            }) {
+                HStack {
+                    Image(systemName: "envelope.badge.fill")
+                    Text("Mark as Unread")
                 }
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.accentInfo)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.accentInfo.opacity(0.15))
+                .cornerRadius(12)
             }
             
             Button(action: {
@@ -265,6 +259,50 @@ struct AlertDetailView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+    
+    // Format OCC option symbol to readable format
+    private func formatOptionSymbol(_ symbol: String) -> String {
+        // OCC format: SYMBOL + YYMMDD + C/P + 8 digits strike
+        // Example: SOFI270115C00030000 -> SOFI 30C Jan 15, 2027
+        guard symbol.count >= 15 else { return symbol }
+        
+        // Extract underlying symbol (everything before the last 15 chars)
+        let underlyingEnd = symbol.index(symbol.endIndex, offsetBy: -15)
+        let underlying = String(symbol[..<underlyingEnd])
+        
+        let dateStart = symbol.index(symbol.endIndex, offsetBy: -15)
+        let dateEnd = symbol.index(dateStart, offsetBy: 6)
+        let dateStr = String(symbol[dateStart..<dateEnd])
+        
+        let typeIndex = symbol.index(symbol.endIndex, offsetBy: -9)
+        let optionType = String(symbol[typeIndex])
+        
+        let strikeStart = symbol.index(symbol.endIndex, offsetBy: -8)
+        let strikeStr = String(symbol[strikeStart...])
+        
+        if let strikeValue = Double(strikeStr) {
+            let strike = Int(strikeValue / 1000)
+            
+            // Parse YYMMDD format
+            let yearStr = String(dateStr.prefix(2))
+            let monthStr = String(dateStr.dropFirst(2).prefix(2))
+            let dayStr = String(dateStr.suffix(2))
+            
+            // Convert to full year (20XX)
+            let year = 2000 + (Int(yearStr) ?? 0)
+            let month = Int(monthStr) ?? 1
+            let day = Int(dayStr) ?? 1
+            
+            // Get month abbreviation
+            let monthNames = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            let monthName = month >= 1 && month <= 12 ? monthNames[month] : "???"
+            
+            return "\(underlying) \(strike)\(optionType) \(monthName) \(day), \(year)"
+        }
+        
+        return symbol
     }
 }
 
@@ -332,19 +370,21 @@ struct MetadataRow: View {
 #Preview {
     AlertDetailView(
         alert: TradingAlert(
+            id: 1,
             symbol: "SPY",
             message: "Your SPY 600C 01/17 is now 50% profitable - Consider taking profits on this position to lock in gains",
             type: .sell,
             priority: .high,
             source: .tradingBot,
+            isRead: true,
             optionSymbol: "SPY250117C00600000",
             percentChange: 50.0,
             currentPrice: 12.50,
             targetPrice: 15.00
         ),
         onDismiss: {},
-        onMarkRead: {},
-        onDelete: {}
+        onDelete: {},
+        onMarkUnread: {}
     )
     .preferredColorScheme(.dark)
 }

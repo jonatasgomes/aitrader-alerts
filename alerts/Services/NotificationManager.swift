@@ -60,7 +60,7 @@ class NotificationManager: NSObject, ObservableObject {
         
         // Add user info for handling tap
         content.userInfo = [
-            "alertId": alert.id.uuidString,
+            "alertId": String(alert.id),
             "symbol": alert.symbol,
             "type": alert.type.rawValue
         ]
@@ -69,7 +69,7 @@ class NotificationManager: NSObject, ObservableObject {
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         
         let request = UNNotificationRequest(
-            identifier: alert.id.uuidString,
+            identifier: String(alert.id),
             content: content,
             trigger: trigger
         )

@@ -63,7 +63,7 @@ enum AlertSource: String, Codable, CaseIterable {
 }
 
 struct TradingAlert: Identifiable, Codable, Equatable {
-    let id: UUID
+    let id: Int
     let symbol: String
     let message: String
     let type: AlertType
@@ -79,7 +79,7 @@ struct TradingAlert: Identifiable, Codable, Equatable {
     let targetPrice: Double?
     
     init(
-        id: UUID = UUID(),
+        id: Int,
         symbol: String,
         message: String,
         type: AlertType,
