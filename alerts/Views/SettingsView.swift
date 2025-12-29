@@ -12,7 +12,6 @@ struct SettingsView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) var dismiss
     
-    @AppStorage("pollingInterval") private var pollingInterval: Double = 30
     @AppStorage("soundEnabled") private var soundEnabled = true
     @AppStorage("vibrationEnabled") private var vibrationEnabled = true
     
@@ -225,31 +224,7 @@ struct SettingsView: View {
                             }
                         }
                         
-                        // Data Sync Section
-                        settingsSection(title: "Data Sync") {
-                            VStack(spacing: 16) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Image(systemName: "clock.fill")
-                                            .foregroundColor(.accentInfo)
-                                            .frame(width: 24)
-                                        
-                                        Text("Polling Interval")
-                                            .font(.system(size: 15, weight: .medium))
-                                        
-                                        Spacer()
-                                        
-                                        Text("\(Int(pollingInterval))s")
-                                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                            .foregroundColor(.accentInfo)
-                                    }
-                                    
-                                    Slider(value: $pollingInterval, in: 10...120, step: 10)
-                                        .tint(.accentBuy)
-                                }
-                            }
-                        }
-                        
+
                         // About Section
                         settingsSection(title: "About") {
                             VStack(spacing: 16) {

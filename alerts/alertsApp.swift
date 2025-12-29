@@ -29,7 +29,15 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         NotificationManager.shared.requestAuthorization()
         NotificationManager.shared.setupNotificationCategories()
         
+        // Register background tasks for periodic refresh
+        BackgroundTaskManager.shared.registerBackgroundTasks()
+        
         return true
+    }
+    
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        // Schedule background refresh when app goes to background
+        BackgroundTaskManager.shared.scheduleAppRefresh()
     }
     
     // Handle background notification registration (for future push notifications)

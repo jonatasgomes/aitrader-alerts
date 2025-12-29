@@ -299,7 +299,7 @@ struct AlertDetailView: View {
                              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
             let monthName = month >= 1 && month <= 12 ? monthNames[month] : "???"
             
-            return "\(underlying) \(strike)\(optionType) \(monthName) \(day), \(year)"
+            return "\(underlying) \(strike)\(optionType) \(year), \(monthName) \(day)"
         }
         
         return symbol

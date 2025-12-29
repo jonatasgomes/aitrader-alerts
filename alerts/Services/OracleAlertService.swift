@@ -59,13 +59,12 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
     @Published var alerts: [TradingAlert] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published private(set) var pollingState: LongPollingState = .idle
     
     var alertsPublisher: Published<[TradingAlert]>.Publisher { $alerts }
     
-    private var timer: Timer?
-    private var pollingInterval: TimeInterval {
-        UserDefaults.standard.double(forKey: "pollingInterval").clamped(to: 10...120, default: 30)
-    }
+    // Long-polling service replaces timer-based polling
+    private var longPollingService: LongPollingService?
     
     // Oracle REST Data Services (ORDS) Configuration
     // Default to the actual ORDS endpoint
@@ -99,6 +98,9 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
             let fetchedAlerts = try await performFetch()
             self.alerts = fetchedAlerts
             print("✅ Fetched \(fetchedAlerts.count) alerts from Oracle")
+            
+            // Sync badge count with unread alerts
+            updateBadgeCount()
         } catch {
             errorMessage = "Failed to fetch alerts: \(error.localizedDescription)"
             print("❌ Error fetching alerts: \(error)")
@@ -281,20 +283,26 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
         return nil
     }
     
-    // MARK: - Polling
+    // MARK: - Long Polling
     func startPolling() {
-        stopPolling() // Clear any existing timer
-        timer = Timer.scheduledTimer(withTimeInterval: pollingInterval, repeats: true) { [weak self] _ in
-            Task {
-                await self?.fetchAlerts()
-            }
-        }
-        print("📡 Started polling every \(Int(pollingInterval))s")
+        stopPolling() // Clear any existing service
+        
+        // Create and configure the long-polling service
+        longPollingService = LongPollingService(baseURL: baseURL)
+        longPollingService?.delegate = self
+        longPollingService?.start()
+        
+        print("📡 Started long-polling service")
     }
     
     func stopPolling() {
-        timer?.invalidate()
-        timer = nil
+        longPollingService?.stop()
+        longPollingService = nil
+    }
+    
+    /// Force a refresh of the long-polling connection
+    func refreshPolling() {
+        longPollingService?.refresh()
     }
     
     // MARK: - Mark as Read
@@ -312,6 +320,7 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
         do {
             try await updateAlertStatus(id: alert.id, status: "READ")
             print("✅ Marked alert \(alert.id) as read")
+            updateBadgeCount()
         } catch {
             print("❌ Error marking alert as read: \(error)")
             // Revert optimistic update on failure
@@ -336,6 +345,7 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
         do {
             try await updateAlertStatus(id: alert.id, status: "NEW")
             print("✅ Marked alert \(alert.id) as unread")
+            updateBadgeCount()
         } catch {
             print("❌ Error marking alert as unread: \(error)")
             // Revert optimistic update on failure
@@ -357,6 +367,7 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
         do {
             try await performDelete(id: alert.id)
             print("✅ Deleted alert \(alert.id)")
+            updateBadgeCount()
         } catch {
             print("❌ Error deleting alert: \(error)")
             // Revert optimistic update on failure
@@ -450,6 +461,55 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
     
     var unreadCount: Int {
         alerts.filter { !$0.isRead }.count
+    }
+    
+    private func updateBadgeCount() {
+        NotificationManager.shared.updateBadge(count: unreadCount)
+    }
+}
+
+// MARK: - Long Polling Delegate
+extension OracleAlertService: LongPollingDelegate {
+    
+    func longPollingDidDetectChanges() {
+        // Server reported changes - fetch the updated alerts
+        print("📡 Changes detected - refreshing alerts")
+        Task { @MainActor in
+            await fetchAlerts()
+        }
+    }
+    
+    func longPollingStateDidChange(_ state: LongPollingState) {
+        // Update the published state for UI observation
+        DispatchQueue.main.async { [weak self] in
+            self?.pollingState = state
+        }
+        
+        switch state {
+        case .polling:
+            print("📡 Long-polling: Active")
+        case .reconnecting(let attempt):
+            print("📡 Long-polling: Reconnecting (attempt \(attempt))")
+        case .stopped:
+            print("📡 Long-polling: Stopped")
+        case .error(let message):
+            print("❌ Long-polling error: \(message)")
+        case .idle:
+            break
+        }
+    }
+    
+    func longPollingDidEncounterError(_ error: Error) {
+        // Log the error but don't surface to user - reconnection is automatic
+        print("⚠️ Long-polling encountered error: \(error.localizedDescription)")
+    }
+    
+    func longPollingDidResumeFromBackground() {
+        // App returned from background - do a full refresh to catch any missed changes
+        print("📡 Resuming from background - refreshing alerts")
+        Task { @MainActor in
+            await fetchAlerts()
+        }
     }
 }
 

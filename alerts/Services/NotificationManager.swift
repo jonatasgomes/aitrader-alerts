@@ -84,7 +84,15 @@ class NotificationManager: NSObject, ObservableObject {
     }
     
     func clearBadge() {
-        UNUserNotificationCenter.current().setBadgeCount(0)
+        DispatchQueue.main.async {
+            UNUserNotificationCenter.current().setBadgeCount(0)
+        }
+    }
+    
+    func updateBadge(count: Int) {
+        DispatchQueue.main.async {
+            UNUserNotificationCenter.current().setBadgeCount(count)
+        }
     }
     
     func setupNotificationCategories() {
