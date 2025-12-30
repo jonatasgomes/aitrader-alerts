@@ -161,6 +161,9 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
         // Parse ISO 8601 timestamp
         let date = parseDate(oracleAlert.createdAt) ?? Date()
         
+        // Parse updated_at if present
+        let updatedDate: Date? = oracleAlert.updatedAt.flatMap { parseDate($0) }
+        
         // Map Oracle source to AlertSource
         let source: AlertSource
         switch oracleAlert.alertSource.uppercased() {
@@ -209,6 +212,7 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
             priority: priority,
             source: source,
             createdAt: date,
+            updatedAt: updatedDate,
             isRead: isRead,
             optionSymbol: oracleAlert.symbol,
             percentChange: extractPercentChange(from: oracleAlert.alertText),

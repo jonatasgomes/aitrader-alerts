@@ -70,6 +70,7 @@ struct TradingAlert: Identifiable, Codable, Equatable {
     let priority: AlertPriority
     let source: AlertSource
     let createdAt: Date
+    let updatedAt: Date?
     var isRead: Bool
     
     // Optional trading details
@@ -86,6 +87,7 @@ struct TradingAlert: Identifiable, Codable, Equatable {
         priority: AlertPriority,
         source: AlertSource,
         createdAt: Date = Date(),
+        updatedAt: Date? = nil,
         isRead: Bool = false,
         optionSymbol: String? = nil,
         percentChange: Double? = nil,
@@ -99,6 +101,7 @@ struct TradingAlert: Identifiable, Codable, Equatable {
         self.priority = priority
         self.source = source
         self.createdAt = createdAt
+        self.updatedAt = updatedAt
         self.isRead = isRead
         self.optionSymbol = optionSymbol
         self.percentChange = percentChange

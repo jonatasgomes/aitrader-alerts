@@ -204,6 +204,17 @@ struct AlertDetailView: View {
                 value: formatDate(alert.createdAt)
             )
             
+            if let updatedAt = alert.updatedAt {
+                Divider()
+                    .background(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1))
+                
+                MetadataRow(
+                    icon: "arrow.clockwise.circle.fill",
+                    label: "Last Updated",
+                    value: formatDate(updatedAt)
+                )
+            }
+            
             Divider()
                 .background(colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1))
             
@@ -264,7 +275,7 @@ struct AlertDetailView: View {
     // Format OCC option symbol to readable format
     private func formatOptionSymbol(_ symbol: String) -> String {
         // OCC format: SYMBOL + YYMMDD + C/P + 8 digits strike
-        // Example: SOFI270115C00030000 -> SOFI 30C Jan 15, 2027
+        // Example: SOFI270115C00030000 -> SOFI 15-Jan-27 30C
         guard symbol.count >= 15 else { return symbol }
         
         // Extract underlying symbol (everything before the last 15 chars)
@@ -289,8 +300,6 @@ struct AlertDetailView: View {
             let monthStr = String(dateStr.dropFirst(2).prefix(2))
             let dayStr = String(dateStr.suffix(2))
             
-            // Convert to full year (20XX)
-            let year = 2000 + (Int(yearStr) ?? 0)
             let month = Int(monthStr) ?? 1
             let day = Int(dayStr) ?? 1
             
@@ -299,7 +308,7 @@ struct AlertDetailView: View {
                              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
             let monthName = month >= 1 && month <= 12 ? monthNames[month] : "???"
             
-            return "\(underlying) \(strike)\(optionType) \(year), \(monthName) \(day)"
+            return "\(underlying) \(day)-\(monthName)-\(yearStr) \(strike)\(optionType)"
         }
         
         return symbol

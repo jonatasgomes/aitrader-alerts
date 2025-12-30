@@ -45,16 +45,6 @@ struct AlertCardView: View {
                         .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundColor(colorScheme == .dark ? .white : .primary)
                     
-                    if let optionSymbol = alert.optionSymbol {
-                        Text(formatOptionSymbol(optionSymbol))
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.accentInfo.opacity(0.15))
-                            .foregroundColor(.accentInfo)
-                            .cornerRadius(4)
-                    }
-                    
                     Spacer()
                     
                     if let change = alert.percentChange {
@@ -115,46 +105,6 @@ struct AlertCardView: View {
         .onTapGesture {
             onTap()
         }
-    }
-    
-    // Format OCC option symbol to readable format
-    private func formatOptionSymbol(_ symbol: String) -> String {
-        // OCC format: SYMBOL + YYMMDD + C/P + 8 digits strike
-        // Example: SOFI270115C00030000 -> 30C Jan 15, 2027
-        guard symbol.count >= 15 else { return symbol }
-        
-        let dateStart = symbol.index(symbol.endIndex, offsetBy: -15)
-        let dateEnd = symbol.index(dateStart, offsetBy: 6)
-        let dateStr = String(symbol[dateStart..<dateEnd])
-        
-        let typeIndex = symbol.index(symbol.endIndex, offsetBy: -9)
-        let optionType = String(symbol[typeIndex])
-        
-        let strikeStart = symbol.index(symbol.endIndex, offsetBy: -8)
-        let strikeStr = String(symbol[strikeStart...])
-        
-        if let strikeValue = Double(strikeStr) {
-            let strike = Int(strikeValue / 1000)
-            
-            // Parse YYMMDD format
-            let yearStr = String(dateStr.prefix(2))
-            let monthStr = String(dateStr.dropFirst(2).prefix(2))
-            let dayStr = String(dateStr.suffix(2))
-            
-            // Convert to full year (20XX)
-            let year = 2000 + (Int(yearStr) ?? 0)
-            let month = Int(monthStr) ?? 1
-            let day = Int(dayStr) ?? 1
-            
-            // Get month abbreviation
-            let monthNames = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
-                             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-            let monthName = month >= 1 && month <= 12 ? monthNames[month] : "???"
-            
-            return "\(strike)\(optionType) \(year), \(monthName) \(day)"
-        }
-        
-        return symbol
     }
 }
 
