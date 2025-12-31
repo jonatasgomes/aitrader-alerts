@@ -54,12 +54,26 @@ protocol AlertServiceProtocol {
     func deleteAlert(_ alert: TradingAlert) async
 }
 
+// MARK: - Last Screening Response
+struct LastScreeningResponse: Codable {
+    let items: [LastScreeningItem]
+}
+
+struct LastScreeningItem: Codable {
+    let lastScreening: String
+    
+    enum CodingKeys: String, CodingKey {
+        case lastScreening = "last_screening"
+    }
+}
+
 // MARK: - Oracle Alert Service
 class OracleAlertService: ObservableObject, AlertServiceProtocol {
     @Published var alerts: [TradingAlert] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published private(set) var pollingState: LongPollingState = .idle
+    @Published private(set) var lastScreeningDate: Date?
     
     var alertsPublisher: Published<[TradingAlert]>.Publisher { $alerts }
     
@@ -95,8 +109,18 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
         errorMessage = nil
         
         do {
-            let fetchedAlerts = try await performFetch()
+            // Fetch alerts and last screening time concurrently
+            async let alertsFetch = performFetch()
+            async let screeningFetch = fetchLastScreeningDate()
+            
+            let fetchedAlerts = try await alertsFetch
             self.alerts = fetchedAlerts
+            
+            // Update last screening date (don't fail if this errors)
+            if let screeningDate = try? await screeningFetch {
+                self.lastScreeningDate = screeningDate
+            }
+            
             print("✅ Fetched \(fetchedAlerts.count) alerts from Oracle")
             
             // Sync badge count with unread alerts
@@ -107,6 +131,38 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
         }
         
         isLoading = false
+    }
+    
+    // MARK: - Fetch Last Screening Date
+    private func fetchLastScreeningDate() async throws -> Date? {
+        let urlString = "\(baseURL)/changes/last_screening"
+        
+        guard let url = URL(string: urlString) else {
+            return nil
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 10
+        
+        addAuthHeader(to: &request)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            return nil
+        }
+        
+        let decoder = JSONDecoder()
+        let screeningResponse = try decoder.decode(LastScreeningResponse.self, from: data)
+        
+        guard let firstItem = screeningResponse.items.first else {
+            return nil
+        }
+        
+        return parseDate(firstItem.lastScreening)
     }
     
     private func performFetch() async throws -> [TradingAlert] {

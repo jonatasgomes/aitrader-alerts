@@ -116,9 +116,20 @@ struct AlertListView: View {
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(colorScheme == .dark ? .white : .primary)
                     
-                    Text("\(alertService.unreadCount) unread")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.accentBuy)
+                    HStack(spacing: 8) {
+                        Text("\(alertService.unreadCount) unread")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.accentBuy)
+                        
+                        if let lastScreening = alertService.lastScreeningDate {
+                            Text("•")
+                                .foregroundColor(colorScheme == .dark ? .white.opacity(0.4) : .secondary)
+                            
+                            Text("Screened \(formatScreeningDate(lastScreening))")
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(colorScheme == .dark ? .white.opacity(0.6) : .secondary)
+                        }
+                    }
                 }
                 
                 Spacer()
@@ -322,6 +333,13 @@ struct AlertListView: View {
             
             Spacer()
         }
+    }
+    
+    // MARK: - Helpers
+    private func formatScreeningDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d 'at' h:mm a"
+        return formatter.string(from: date)
     }
 }
 
