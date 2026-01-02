@@ -270,6 +270,7 @@ class OracleAlertService: ObservableObject, AlertServiceProtocol {
             createdAt: date,
             updatedAt: updatedDate,
             isRead: isRead,
+            symbolType: oracleAlert.symbolType.lowercased(),
             optionSymbol: oracleAlert.symbol,
             percentChange: extractPercentChange(from: oracleAlert.alertText),
             currentPrice: nil,

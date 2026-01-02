@@ -30,8 +30,10 @@ struct AlertDetailView: View {
                         // Main info card
                         mainInfoCard
                         
-                        // Trading details
-                        if alert.optionSymbol != nil || alert.percentChange != nil || alert.currentPrice != nil {
+                        // Trading details - show for options, or when there's price/change data
+                        if (alert.symbolType?.lowercased() == "option" && alert.optionSymbol != nil) || 
+                           alert.percentChange != nil || 
+                           alert.currentPrice != nil {
                             tradingDetailsCard
                         }
                         
@@ -146,7 +148,10 @@ struct AlertDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                if let optionSymbol = alert.optionSymbol {
+                // Only show option symbol for option alerts, not stocks
+                if let symbolType = alert.symbolType,
+                   symbolType.lowercased() == "option",
+                   let optionSymbol = alert.optionSymbol {
                     DetailCell(
                         icon: "doc.text.fill",
                         label: "Option",
@@ -386,6 +391,7 @@ struct MetadataRow: View {
             priority: .high,
             source: .tradingBot,
             isRead: true,
+            symbolType: "option",
             optionSymbol: "SPY250117C00600000",
             percentChange: 50.0,
             currentPrice: 12.50,

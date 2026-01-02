@@ -74,6 +74,7 @@ struct TradingAlert: Identifiable, Codable, Equatable {
     var isRead: Bool
     
     // Optional trading details
+    let symbolType: String?  // "stock" or "option"
     let optionSymbol: String?
     let percentChange: Double?
     let currentPrice: Double?
@@ -89,6 +90,7 @@ struct TradingAlert: Identifiable, Codable, Equatable {
         createdAt: Date = Date(),
         updatedAt: Date? = nil,
         isRead: Bool = false,
+        symbolType: String? = nil,
         optionSymbol: String? = nil,
         percentChange: Double? = nil,
         currentPrice: Double? = nil,
@@ -103,6 +105,7 @@ struct TradingAlert: Identifiable, Codable, Equatable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.isRead = isRead
+        self.symbolType = symbolType
         self.optionSymbol = optionSymbol
         self.percentChange = percentChange
         self.currentPrice = currentPrice
